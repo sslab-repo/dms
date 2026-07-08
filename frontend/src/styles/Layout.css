@@ -1,0 +1,187 @@
+/* App Shell — transparent so the page blends into the datapot_www card
+   when embedded in an iframe (datapot.org tools page provides the full
+   site header/footer) */
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+/* Masthead — second-level tab row, matching the datapot_www site nav
+   (small uppercase links, red underline on the active tab) */
+.masthead {
+    padding: 0 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.appname {
+    color: var(--black);
+    font-weight: 300;
+    font-size: 1.15rem;
+    text-decoration: none;
+    /* pushes the nav + account group to the right side */
+    margin-right: auto;
+}
+
+.appname:hover { color: var(--black); }
+.appname b { font-weight: 700; }
+
+.app-nav,
+.app-nav-account {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+}
+
+.app-nav-link {
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    text-decoration: none;
+    padding: .6rem 0;
+    border-bottom: 3px solid transparent;
+    transition: color 0.15s;
+}
+
+.app-nav-link:hover {
+    color: var(--red);
+}
+
+.app-nav-link.active {
+    color: var(--red);
+    border-bottom-color: var(--red);
+}
+
+.app-nav-account .app-nav-link {
+    color: var(--text-secondary);
+    font-size: .8rem;
+}
+
+.app-nav-account .app-nav-link:hover,
+.app-nav-account .app-nav-link.active {
+    color: var(--red);
+}
+
+.app-user-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.app-user-name {
+    color: var(--text-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.app-nav-button {
+    color: var(--text-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    transition: color 0.15s;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    padding: 0;
+}
+
+.app-nav-button:hover {
+    color: var(--red);
+}
+
+/* Main content area */
+.app-main {
+    flex: 1;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: .5rem 1.5rem 1.5rem;
+    width: 100%;
+}
+
+/* Animations */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal               { animation: fadeUp 0.5s ease-out forwards; }
+.reveal-delay-1       { animation-delay: 0.05s; }
+.reveal-delay-2       { animation-delay: 0.1s; }
+.reveal-delay-3       { animation-delay: 0.15s; }
+.reveal-delay-4       { animation-delay: 0.2s; }
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-subtle) 0%, #e0dfdc 50%, var(--bg-subtle) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeleton-text  { height: 1rem; margin-bottom: 0.5rem; }
+.skeleton-title { height: 1.25rem; width: 60%; margin-bottom: 0.75rem; }
+
+/* Detail section accents */
+.detail-section h2 {
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.detail-section h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: var(--red);
+}
+
+/* Load more */
+.load-more-container {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 1rem;
+}
+
+.load-more-btn {
+    padding: 0.75rem 2rem;
+    background: var(--bg-subtle);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+}
+
+.load-more-btn:hover {
+    background: var(--border);
+}
+
+.load-more-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

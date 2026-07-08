@@ -1,0 +1,19 @@
+# secrets — real config lives only on the deployment host (.env.example is tracked)
+.env
+backend/.env
+frontend/.env
+
+# uploaded dataset blobs
+/storage/
+backend/storage/
+
+# build artifacts & dependencies
+backend/main
+frontend/node_modules/
+frontend/dist/
+
+# logs, archives, local tooling
+*.log
+*.tar.gz
+.claude/
+.DS_Store
