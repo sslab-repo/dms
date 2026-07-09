@@ -410,8 +410,8 @@ h3 { font-size: 1.1rem; }
 
 .home-notice {
   max-width: 860px;
-  margin: 0 auto 1.5rem;
-  padding: 1.5rem 0 1rem;
+  margin: 0 auto;
+  padding: 0.75rem 0 0;
 }
 
 .home-notice p {
@@ -456,7 +456,7 @@ h3 { font-size: 1.1rem; }
 
 .upload-link:hover { background: var(--red); color: var(--white); }
 
-.home-search-section { padding: 2rem 0 1.5rem; }
+.home-search-section { padding: 0.75rem 0 1.5rem; }
 
 /* Search Zone */
 .search-zone {
