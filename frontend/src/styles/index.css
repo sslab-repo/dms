@@ -1249,6 +1249,41 @@ h3 { font-size: 1.1rem; }
 
 .download-buttons .btn-large { box-sizing: border-box; }
 
+/* One download button plus its copy-link companion. */
+.download-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.download-row .btn-large { flex: 1; }
+
+.copy-link-btn {
+  width: 2.9rem;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.copy-link-btn:hover:not(:disabled) {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.copy-link-btn.copied {
+  border-color: var(--red);
+  color: var(--red);
+  font-weight: 700;
+}
+
+.copy-link-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .ml-package-btn {
   display: inline-flex;
   align-items: center;

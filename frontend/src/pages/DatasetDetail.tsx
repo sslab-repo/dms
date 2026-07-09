@@ -38,6 +38,31 @@ export default function DatasetDetail() {
   const [fileTotalChunks, setFileTotalChunks] = useState(0)
   const [fileUploadActive, setFileUploadActive] = useState(false)
   const addFileInputRef = useRef<HTMLInputElement>(null)
+  const [copiedLink, setCopiedLink] = useState<'files' | 'ml' | null>(null)
+  const copiedTimerRef = useRef<number | undefined>(undefined)
+
+  async function copyDownloadLink(url: string, which: 'files' | 'ml') {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        // Fallback for non-HTTPS contexts (e.g. the lab server over plain http)
+        const ta = document.createElement('textarea')
+        ta.value = url
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+      }
+      setCopiedLink(which)
+      window.clearTimeout(copiedTimerRef.current)
+      copiedTimerRef.current = window.setTimeout(() => setCopiedLink(null), 2000)
+    } catch {
+      // Clipboard unavailable — leave the button as-is rather than erroring
+    }
+  }
 
   useEffect(() => {
     if (!id) return
@@ -572,40 +597,72 @@ export default function DatasetDetail() {
           {dataset.status === 'ready' && (
             <div className="detail-download-section">
               <div className="download-buttons">
-              <a
-                href={downloadUrl(dataset.id)}
-                className="btn-primary btn-large"
-                download
-              >
-                Download Original Files
-              </a>
-              {dataset.export_status === 'ready' ? (
+              <div className="download-row">
                 <a
-                  href={exportDownloadUrl(dataset.id)}
-                  className="btn-primary btn-large ml-package-btn"
+                  href={downloadUrl(dataset.id)}
+                  className="btn-primary btn-large"
                   download
                 >
-                  Download ML Package
+                  Download Original Files
                 </a>
+                <button
+                  type="button"
+                  className={`copy-link-btn${copiedLink === 'files' ? ' copied' : ''}`}
+                  title={copiedLink === 'files' ? 'Link copied!' : 'Copy download link'}
+                  aria-label="Copy download link for original files"
+                  onClick={() => copyDownloadLink(downloadUrl(dataset.id), 'files')}
+                >
+                  {copiedLink === 'files' ? '✓' : '⧉'}
+                </button>
+              </div>
+              {dataset.export_status === 'ready' ? (
+                <div className="download-row">
+                  <a
+                    href={exportDownloadUrl(dataset.id)}
+                    className="btn-primary btn-large ml-package-btn"
+                    download
+                  >
+                    Download ML Package
+                  </a>
+                  <button
+                    type="button"
+                    className={`copy-link-btn${copiedLink === 'ml' ? ' copied' : ''}`}
+                    title={copiedLink === 'ml' ? 'Link copied!' : 'Copy download link'}
+                    aria-label="Copy download link for ML package"
+                    onClick={() => copyDownloadLink(exportDownloadUrl(dataset.id), 'ml')}
+                  >
+                    {copiedLink === 'ml' ? '✓' : '⧉'}
+                  </button>
+                </div>
               ) : dataset.export_status === 'error' ? (
-                <button
-                  type="button"
-                  className="btn-primary btn-large ml-package-btn ml-package-disabled"
-                  disabled
-                  title="The ML package could not be built for this dataset."
-                >
-                  ML Package Unavailable
-                </button>
+                <div className="download-row">
+                  <button
+                    type="button"
+                    className="btn-primary btn-large ml-package-btn ml-package-disabled"
+                    disabled
+                    title="The ML package could not be built for this dataset."
+                  >
+                    ML Package Unavailable
+                  </button>
+                  <button type="button" className="copy-link-btn" disabled title="No link available">
+                    ⧉
+                  </button>
+                </div>
               ) : (
-                <button
-                  type="button"
-                  className="btn-primary btn-large ml-package-btn ml-package-disabled"
-                  disabled
-                  title="README datasheet, manifest, raw files, train/val/test splits, and a rebuild script."
-                >
-                  <span className="ml-package-spinner" />
-                  Preparing ML Package… {Math.round((dataset.export_progress || 0) * 100)}%
-                </button>
+                <div className="download-row">
+                  <button
+                    type="button"
+                    className="btn-primary btn-large ml-package-btn ml-package-disabled"
+                    disabled
+                    title="README datasheet, manifest, raw files, train/val/test splits, and a rebuild script."
+                  >
+                    <span className="ml-package-spinner" />
+                    Preparing ML Package… {Math.round((dataset.export_progress || 0) * 100)}%
+                  </button>
+                  <button type="button" className="copy-link-btn" disabled title="Link available once the package is ready">
+                    ⧉
+                  </button>
+                </div>
               )}
               </div>
               {dataset.export_status !== 'error' && (
