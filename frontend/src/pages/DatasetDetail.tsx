@@ -571,6 +571,7 @@ export default function DatasetDetail() {
 
           {dataset.status === 'ready' && (
             <div className="detail-download-section">
+              <div className="download-buttons">
               <a
                 href={downloadUrl(dataset.id)}
                 className="btn-primary btn-large"
@@ -606,6 +607,7 @@ export default function DatasetDetail() {
                   Preparing ML Package… {Math.round((dataset.export_progress || 0) * 100)}%
                 </button>
               )}
+              </div>
               {dataset.export_status !== 'error' && (
                 <p className="ml-package-hint">
                   The ML package bundles a datasheet, manifest with checksums, raw files,
