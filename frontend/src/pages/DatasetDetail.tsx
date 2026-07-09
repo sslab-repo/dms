@@ -584,7 +584,7 @@ export default function DatasetDetail() {
                   className="btn-primary btn-large ml-package-btn"
                   download
                 >
-                  Download ML Package (.zip)
+                  Download ML Package
                 </a>
               ) : dataset.export_status === 'error' ? (
                 <button
