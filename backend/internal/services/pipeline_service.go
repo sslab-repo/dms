@@ -11,18 +11,20 @@ import (
 
 	"dataset-platform/backend/internal/ai"
 	"dataset-platform/backend/internal/filehandler"
+	"dataset-platform/backend/internal/mlexport"
 	"dataset-platform/backend/internal/profiler"
 
 	"github.com/lib/pq"
 )
 
 type PipelineService struct {
-	db       *sql.DB
-	aiClient *ai.Client
+	db        *sql.DB
+	aiClient  *ai.Client
+	exportSvc *mlexport.Service
 }
 
-func NewPipelineService(db *sql.DB, aiClient *ai.Client) *PipelineService {
-	return &PipelineService{db: db, aiClient: aiClient}
+func NewPipelineService(db *sql.DB, aiClient *ai.Client, exportSvc *mlexport.Service) *PipelineService {
+	return &PipelineService{db: db, aiClient: aiClient, exportSvc: exportSvc}
 }
 
 // Run executes the AI pipeline once all files for a dataset are assembled.
@@ -67,6 +69,8 @@ func (p *PipelineService) Run(datasetID int, files []filehandler.AssembledFile) 
 		p.pipelineError(ctx, datasetID, fmt.Sprintf("generated metadata cleanup failed: %v", err))
 		return
 	}
+	// A reprocessed dataset may have edited files; never serve a stale package.
+	p.exportSvc.Reset(ctx, datasetID)
 
 	// Derive file names and total size from the assembled file list.
 	fileNames := make([]string, len(files))
@@ -211,6 +215,9 @@ func (p *PipelineService) Run(datasetID int, files []filehandler.AssembledFile) 
 		}
 	}
 
+	// export_status flips to 'building' in the same statement that makes the
+	// dataset ready, so clients never observe ready + none and the ML-package
+	// build has no race with the on-view backfill trigger.
 	if _, err := p.db.ExecContext(ctx,
 		`UPDATE datasets
 		    SET status             = 'ready',
@@ -225,6 +232,8 @@ func (p *PipelineService) Run(datasetID int, files []filehandler.AssembledFile) 
 		        ai_caveats         = $9,
 		        tags               = $10,
 		        processing_stage   = '',
+		        export_status      = 'building',
+		        export_progress    = 0,
 		        updated_at         = NOW()
 		  WHERE id = $11`,
 		analysis.Summary,
@@ -244,6 +253,10 @@ func (p *PipelineService) Run(datasetID int, files []filehandler.AssembledFile) 
 	}
 
 	fmt.Printf("[AI pipeline] dataset %d: READY\n", datasetID)
+
+	// Build the downloadable ML package now that all metadata is final.
+	// The dataset is already searchable; this only gates the package button.
+	p.exportSvc.BuildNow(datasetID)
 }
 
 func (p *PipelineService) updateSearchVector(ctx context.Context, datasetID int, analysis *ai.DatasetAnalysis) error {

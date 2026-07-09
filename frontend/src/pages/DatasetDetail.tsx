@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getDataset,
   downloadUrl,
+  exportDownloadUrl,
   updateDataset,
   deleteDataset,
   registerAdditionalFile,
@@ -44,12 +45,16 @@ export default function DatasetDetail() {
   }, [id])
 
   useEffect(() => {
-    if (!dataset || (dataset.status !== 'pending' && dataset.status !== 'processing')) return
+    // Poll while the dataset is still ingesting, and also while the ML
+    // package is being built so the export button can flip to enabled.
+    const ingesting = dataset && (dataset.status === 'pending' || dataset.status === 'processing')
+    const exporting = dataset && dataset.status === 'ready' && dataset.export_status === 'building'
+    if (!ingesting && !exporting) return
     const timer = setInterval(() => {
       loadDataset(dataset.id, true)
     }, 2000)
     return () => clearInterval(timer)
-  }, [dataset?.id, dataset?.status])
+  }, [dataset?.id, dataset?.status, dataset?.export_status])
 
   async function loadDataset(datasetId: number, quiet = false) {
     if (!quiet) {
@@ -571,8 +576,42 @@ export default function DatasetDetail() {
                 className="btn-primary btn-large"
                 download
               >
-                Download Dataset
+                Download Original Files
               </a>
+              {dataset.export_status === 'ready' ? (
+                <a
+                  href={exportDownloadUrl(dataset.id)}
+                  className="btn-primary btn-large ml-package-btn"
+                  download
+                >
+                  Download ML Package (.zip)
+                </a>
+              ) : dataset.export_status === 'error' ? (
+                <button
+                  type="button"
+                  className="btn-primary btn-large ml-package-btn ml-package-disabled"
+                  disabled
+                  title="The ML package could not be built for this dataset."
+                >
+                  ML Package Unavailable
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-primary btn-large ml-package-btn ml-package-disabled"
+                  disabled
+                  title="README datasheet, manifest, raw files, train/val/test splits, and a rebuild script."
+                >
+                  <span className="ml-package-spinner" />
+                  Preparing ML Package… {Math.round((dataset.export_progress || 0) * 100)}%
+                </button>
+              )}
+              {dataset.export_status !== 'error' && (
+                <p className="ml-package-hint">
+                  The ML package bundles a datasheet, manifest with checksums, raw files,
+                  train/val/test splits, and a deterministic rebuild script.
+                </p>
+              )}
             </div>
           )}
 
