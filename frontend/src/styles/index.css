@@ -1247,7 +1247,11 @@ h3 { font-size: 1.1rem; }
   max-width: 100%;
 }
 
-.download-buttons .btn-large { box-sizing: border-box; }
+.download-buttons .btn-large {
+  box-sizing: border-box;
+  padding: 0.55rem 1.25rem;
+  font-size: 0.85rem;
+}
 
 /* One download button plus its copy-link companion. */
 .download-row {
@@ -1259,11 +1263,11 @@ h3 { font-size: 1.1rem; }
 .download-row .btn-large { flex: 1; }
 
 .copy-link-btn {
-  width: 2.9rem;
+  width: 2.4rem;
   border: 1px solid var(--border);
   background: var(--bg-card);
   color: var(--text-secondary);
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1298,8 +1302,8 @@ h3 { font-size: 1.1rem; }
 }
 
 .ml-package-spinner {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border: 2px solid var(--border);
   border-top-color: var(--red);
   border-radius: 50%;
