@@ -163,6 +163,8 @@ type DatasetDetail struct {
 	TotalSizeBytes    int64                    `json:"total_size_bytes"`
 	Status            string                   `json:"status"`
 	ProcessingStage   string                   `json:"processing_stage"`
+	ExportStatus      string                   `json:"export_status"`
+	ExportProgress    float64                  `json:"export_progress"`
 	UploadedAt        time.Time                `json:"uploaded_at"`
 	ErrorMessage      string                   `json:"error_message"`
 	Tags              []string                 `json:"tags"`
@@ -186,7 +188,9 @@ func (s *DatasetService) GetDataset(ctx context.Context, id int) (*DatasetDetail
 		        coalesce(modality, ''), coalesce(dataset_type, ''), coalesce(annotation_format, ''),
 		        label_completeness, ai_confidence, coalesce(ai_caveats, '{}'),
 		        total_size_bytes, status,
-		        coalesce(processing_stage, ''), uploaded_at,
+		        coalesce(processing_stage, ''),
+		        coalesce(export_status, 'none'), coalesce(export_progress, 0),
+		        uploaded_at,
 		        coalesce(error_message, ''), coalesce(tags, '{}'),
 		        coalesce(profile_json::text, ''),
 		        label_column
@@ -201,7 +205,9 @@ func (s *DatasetService) GetDataset(ctx context.Context, id int) (*DatasetDetail
 		&ds.Modality, &ds.DatasetType, &ds.AnnotationFormat,
 		&ds.LabelCompleteness, &ds.AIConfidence, pq.Array(&ds.AICaveats),
 		&ds.TotalSizeBytes,
-		&ds.Status, &ds.ProcessingStage, &ds.UploadedAt,
+		&ds.Status, &ds.ProcessingStage,
+		&ds.ExportStatus, &ds.ExportProgress,
+		&ds.UploadedAt,
 		&ds.ErrorMessage, pq.Array(&ds.Tags), &profileJSON,
 		&labelColumn,
 	); err != nil {

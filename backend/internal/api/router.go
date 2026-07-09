@@ -11,7 +11,8 @@ package api
 		POST /api/datasets              — create dataset record
 		GET  /api/datasets              — list ready datasets only
 		GET  /api/datasets/:id          — single dataset with full metadata
-		GET  /api/datasets/:id/download — stream file to client
+		GET  /api/datasets/:id/download — stream original file(s) to client
+		GET  /api/datasets/:id/export   — stream the prebuilt ML package zip
 		POST /api/files/register        — pre-create a files row, get file_id
 		POST /api/files/chunk           — upload one chunk of a large file
 		GET  /api/search                — hybrid search with citation tags
@@ -28,6 +29,7 @@ package api
 */
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -38,6 +40,7 @@ import (
 	"dataset-platform/backend/internal/api/handlers"
 	"dataset-platform/backend/internal/auth"
 	"dataset-platform/backend/internal/filehandler"
+	"dataset-platform/backend/internal/mlexport"
 	"dataset-platform/backend/internal/search"
 	"dataset-platform/backend/internal/services"
 )
@@ -59,23 +62,29 @@ type Router struct {
 }
 
 // NewRouter wires all routes and returns the router.
+// fileStorageDir is the root of on-disk dataset storage; ML package exports
+// are built under <fileStorageDir>/exports/.
 func NewRouter(
 	db *sql.DB,
 	aiClient *ai.Client,
 	fh *filehandler.Handler,
 	ss *search.Service,
+	fileStorageDir string,
 	jwtSecret string,
 	jwtExpiry time.Duration,
 ) *Router {
+	exportSvc := mlexport.NewService(db, fileStorageDir)
+	exportSvc.RecoverInterrupted(context.Background())
+
 	r := &Router{
 		db:                 db,
 		aiClient:           aiClient,
 		fileHandler:        fh,
-		pipelineSvc:        services.NewPipelineService(db, aiClient),
+		pipelineSvc:        services.NewPipelineService(db, aiClient, exportSvc),
 		healthHandler:      handlers.NewHealthHandler(),
 		authHandler:        handlers.NewAuthHandler(db, jwtSecret, jwtExpiry),
 		adminHandler:       handlers.NewAdminHandler(db),
-		datasetHandler:     handlers.NewDatasetHandler(services.NewDatasetService(db), fh),
+		datasetHandler:     handlers.NewDatasetHandler(services.NewDatasetService(db), fh, exportSvc),
 		datasetFileHandler: handlers.NewDatasetFileHandler(services.NewDatasetFileService(db), fh),
 		searchHandler:      handlers.NewSearchHandler(ss),
 		jwtSecret:          jwtSecret,

@@ -1,24 +1,30 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"dataset-platform/backend/internal/auth"
 	"dataset-platform/backend/internal/filehandler"
+	"dataset-platform/backend/internal/mlexport"
 	"dataset-platform/backend/internal/services"
 )
 
 type DatasetHandler struct {
 	datasetSvc  *services.DatasetService
 	fileHandler *filehandler.Handler
+	exportSvc   *mlexport.Service
 }
 
-func NewDatasetHandler(datasetSvc *services.DatasetService, fileHandler *filehandler.Handler) *DatasetHandler {
-	return &DatasetHandler{datasetSvc: datasetSvc, fileHandler: fileHandler}
+func NewDatasetHandler(datasetSvc *services.DatasetService, fileHandler *filehandler.Handler, exportSvc *mlexport.Service) *DatasetHandler {
+	return &DatasetHandler{datasetSvc: datasetSvc, fileHandler: fileHandler, exportSvc: exportSvc}
 }
 
 type CreateDatasetRequest struct {
@@ -75,6 +81,15 @@ func (h *DatasetHandler) HandleDatasetByID(w http.ResponseWriter, req *http.Requ
 		q.Set("dataset_id", strconv.Itoa(id))
 		req.URL.RawQuery = q.Encode()
 		h.fileHandler.HandleDownload(w, req)
+		return
+	}
+
+	if len(parts) == 2 && parts[1] == "export" {
+		if req.Method != http.MethodGet {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		h.downloadExport(w, req, id)
 		return
 	}
 
@@ -150,7 +165,67 @@ func (h *DatasetHandler) getDataset(w http.ResponseWriter, req *http.Request, id
 		return
 	}
 
+	// Backfill: datasets that became ready before the ML-package feature
+	// existed get their package built on first view.
+	if result.Status == "ready" && result.ExportStatus == "none" {
+		if h.exportSvc.StartIfNeeded(id) {
+			result.ExportStatus = "building"
+			result.ExportProgress = 0
+		}
+	}
+
 	writeJSON(w, http.StatusOK, result)
+}
+
+// downloadExport streams the prebuilt ML package zip. While the package is
+// still building (or failed), it answers with JSON state instead so the
+// frontend can render the disabled button correctly even on a direct hit.
+func (h *DatasetHandler) downloadExport(w http.ResponseWriter, req *http.Request, id int) {
+	info, err := h.exportSvc.Info(req.Context(), id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "dataset not found", http.StatusNotFound)
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return
+	}
+
+	switch info.Status {
+	case "ready":
+	case "building":
+		writeJSON(w, http.StatusConflict, map[string]any{
+			"status":   info.Status,
+			"progress": info.Progress,
+			"error":    "ML package is still being prepared",
+		})
+		return
+	default: // none | error
+		writeJSON(w, http.StatusConflict, map[string]any{
+			"status": info.Status,
+			"error":  "ML package is not available for this dataset",
+		})
+		return
+	}
+
+	file, err := os.Open(info.Path)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "package file not found on disk"})
+		return
+	}
+	defer file.Close()
+	stat, err := file.Stat()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "package file not readable"})
+		return
+	}
+
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, info.ZipName))
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	if _, err := io.Copy(w, file); err != nil {
+		fmt.Printf("[MLExport] streaming package for dataset %d failed: %v\n", id, err)
+	}
 }
 
 func (h *DatasetHandler) updateDataset(w http.ResponseWriter, req *http.Request, id int) {
@@ -200,5 +275,6 @@ func (h *DatasetHandler) deleteDataset(w http.ResponseWriter, req *http.Request,
 		storagePaths = append(storagePaths, item.StoragePath)
 	}
 	h.fileHandler.CleanupDatasetFiles(fileIDs, storagePaths)
+	h.exportSvc.Cleanup(id)
 	w.WriteHeader(http.StatusNoContent)
 }

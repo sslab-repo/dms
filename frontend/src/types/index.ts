@@ -21,6 +21,8 @@ export interface Dataset {
     total_size_bytes: number
     status: 'pending' | 'processing' | 'ready' | 'error'
     processing_stage: string
+    export_status: 'none' | 'building' | 'ready' | 'error'
+    export_progress: number
     uploaded_at: string
     error_message: string
     tags: string[]
