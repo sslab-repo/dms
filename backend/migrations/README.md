@@ -17,6 +17,7 @@ Migrations are SQL files that create and evolve the database schema in a predict
 | `005_add_ai_confidence_caveats.sql` | Adds `ai_confidence` (real) and `ai_caveats` (text array) so researchers know when metadata was inferred from bounded samples. |
 | `006_materialized_search_vector.sql` | Converts `datasets.search_vector` from a generated column to a plain `tsvector`, recreates the GIN index, and backfills labels/pseudo-queries into keyword search. |
 | `007_auth_users.sql` | Adds `users`, dataset `owner_id`, and the owner index used by auth-protected mutations. |
+| `008_ml_export.sql` | Adds ML package export state to `datasets` (`export_status`, `export_progress`, `export_path`, `export_error`, `export_built_at`) and `sha256` to `files`. |
 
 ## Key tables
 

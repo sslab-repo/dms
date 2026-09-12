@@ -169,6 +169,12 @@ export function downloadUrl(datasetId: number): string {
   return `${BASE}/api/datasets/${datasetId}/download`
 }
 
+// URL of the prebuilt ML package zip (README datasheet + manifest + raw/ +
+// processed splits + build script). Only valid once export_status === 'ready'.
+export function exportDownloadUrl(datasetId: number): string {
+  return `${BASE}/api/datasets/${datasetId}/export`
+}
+
 // Auth
 
 export async function login(username: string, password: string): Promise<LoginResponse> {

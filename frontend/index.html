@@ -2,8 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- empty icon: overrides the browser's cached favicon and stops /favicon.ico requests -->
-    <link rel="icon" href="data:," />
+    <!-- Blank favicons: data: URIs are ignored by Safari, so real transparent
+         files (with a versioned URL to bust old caches) keep the tab icon empty -->
+    <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+    <link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SSLab DMS — Dataset Management | Lewis University</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">

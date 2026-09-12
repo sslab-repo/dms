@@ -78,7 +78,7 @@ func main() {
 	aiClient := ai.NewClient(cfg.AIBaseURL, cfg.AIAPIKey, cfg.EmbeddingURL, cfg.EmbeddingModel, cfg.EmbeddingAPIKey, cfg.EmbeddingDimensions, cfg.AIModel)
 	fileHandler := filehandler.NewHandler(cfg.FileStorageDir, db)
 	searchService := search.NewService(db, aiClient, cfg.SemanticSimilarityThreshold)
-	router := api.NewRouter(db, aiClient, fileHandler, searchService, cfg.JWTSecret, time.Duration(cfg.JWTExpiryHours)*time.Hour)
+	router := api.NewRouter(db, aiClient, fileHandler, searchService, cfg.FileStorageDir, cfg.JWTSecret, time.Duration(cfg.JWTExpiryHours)*time.Hour)
 
 	// Starting the HTTP server
 	// We use a custom http.Server so we can set read/write timeouts that protect the server from slow clients
